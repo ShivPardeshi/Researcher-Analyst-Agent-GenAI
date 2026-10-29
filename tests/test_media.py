@@ -37,8 +37,7 @@ def test_knowledge_base_returns_grounding_media():
 
 
 def test_research_with_base64_image(monkeypatch):
-    """Verify POST /research with an attached base64 image."""
-    monkeypatch.setattr("app.config.GEMINI_API_KEY", "mock_key")
+    monkeypatch.setattr("app.config.is_provider_configured", lambda: True)
 
     # 1x1 transparent GIF in base64
     sample_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
@@ -81,7 +80,7 @@ def test_research_with_base64_image(monkeypatch):
 
 def test_research_image_only_auto_generates_topic(monkeypatch):
     """Verify that providing an image without topic automatically constructs a research query."""
-    monkeypatch.setattr("app.config.GEMINI_API_KEY", "mock_key")
+    monkeypatch.setattr("app.config.is_provider_configured", lambda: True)
 
     sample_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
