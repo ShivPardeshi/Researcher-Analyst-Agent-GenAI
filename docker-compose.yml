@@ -1,0 +1,45 @@
+# ========================================================
+# Docker Compose Orchestration for Research Analyst Agents
+# ========================================================
+services:
+  # FastAPI Service + Integrated Single-Page Research UI (Port 8000)
+  research-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: research-analyst-agents:latest
+    container_name: research-analyst-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Streamlit Interactive Web Application (Port 8501)
+  research-streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: research-analyst-agents:latest
+    container_name: research-analyst-streamlit
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]

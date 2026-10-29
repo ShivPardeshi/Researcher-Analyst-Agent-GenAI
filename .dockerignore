@@ -1,0 +1,15 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.git/
+.gitignore
+.vscode/
+.idea/
+.env
+*.md
+DOCKER_LAB_GUIDE.*
+.DS_Store
+Thumbs.db
