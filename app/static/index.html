@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=3.4">
 </head>
 <body>
 
@@ -72,6 +72,110 @@
               <div class="input-foot">
                 <span class="hint-text">Be specific for deeper analysis and quantitative citations</span>
                 <span class="char-tracker"><span id="charCount">0</span>/2500</span>
+              </div>
+            </div>
+
+            <!-- Media & Image Upload Section -->
+            <div class="media-upload-section">
+              <div class="media-section-header">
+                <label class="field-label" style="margin-bottom: 0;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Attach Grounding Document, Image or Web URL <span class="optional-tag">(Optional)</span>
+                </label>
+                <div class="media-tabs">
+                  <button type="button" class="media-tab-btn active" id="tabUpload" data-tab="upload">📄 Upload File</button>
+                  <button type="button" class="media-tab-btn" id="tabUrl" data-tab="url">🌐 Web Scraping</button>
+                  <button type="button" class="media-tab-btn" id="tabPresets" data-tab="presets">📊 Benchmarks</button>
+                </div>
+              </div>
+
+              <!-- Tab 1: File Dropzone (PDF & Images) -->
+              <div class="media-tab-panel active" id="panelUpload">
+                <div class="image-dropzone" id="imageDropzone">
+                  <input type="file" id="imageFileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="display: none;">
+                  <div class="dropzone-body">
+                    <div class="dropzone-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                    </div>
+                    <div class="dropzone-text">
+                      <span class="dropzone-prompt"><strong>Click to upload</strong> or drag &amp; drop</span>
+                      <span class="dropzone-sub"><strong>PDF Whitepaper (RAG Chunking)</strong> or Image (PNG, JPG, SVG, WEBP) &bull; <em>Paste with Cmd+V</em></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 2: Live Web Scraping URL -->
+              <div class="media-tab-panel" id="panelUrl" style="display: none;">
+                <div class="url-input-row">
+                  <input type="url" id="imageUrlInput" placeholder="https://arxiv.org/html/2405.00000 or tech doc URL" class="media-url-field">
+                  <button type="button" id="loadUrlBtn" class="btn btn-outline btn-sm">Scrape &amp; Ingest</button>
+                </div>
+                <div class="url-help-text">Live web scraper extracts clean article text, strips HTML boilerplate, and cites sources.</div>
+              </div>
+
+              <!-- Tab 3: Presets -->
+              <div class="media-tab-panel" id="panelPresets" style="display: none;">
+                <div class="preset-charts-grid">
+                  <button type="button" class="preset-chart-chip" data-img="/static/media/multi_agent_benchmarks.svg" data-name="multi_agent_benchmarks.svg" data-query="Analyze the multi-agent LLM reasoning benchmarks and hallucination reduction vs single-prompt models in this chart.">
+                    <span>📊</span> Multi-Agent Benchmarks
+                  </button>
+                  <button type="button" class="preset-chart-chip" data-img="/static/media/bess_cost_curve.svg" data-name="bess_cost_curve.svg" data-query="Examine the grid-scale BESS cost curve, solar-plus-storage parity timeline, and capacity growth trajectory.">
+                    <span>⚡</span> BESS Cost Curve
+                  </button>
+                  <button type="button" class="preset-chart-chip" data-img="/static/media/gaa_nanosheet_2nm.svg" data-name="gaa_nanosheet_2nm.svg" data-query="Evaluate the 2nm GAA nanosheet transistor architecture, power efficiency gains, and CoWoS packaging constraints shown in this figure.">
+                    <span>🔬</span> 2nm GAA Architecture
+                  </button>
+                  <button type="button" class="preset-chart-chip" data-img="/static/media/quantum_qubit_scaling.svg" data-name="quantum_qubit_scaling.svg" data-query="Assess the physical vs logical qubit scaling milestones and NIST post-quantum migration deadlines depicted in this timeline.">
+                    <span>⚛️</span> Quantum Scaling Timeline
+                  </button>
+                </div>
+              </div>
+
+              <!-- Attached Media Preview Card -->
+              <div class="attached-media-card" id="attachedMediaCard" style="display: none;">
+                <div class="media-preview-box" id="mediaPreviewBox">
+                  <img id="attachedThumbnail" src="" alt="Attached preview" style="display: none;">
+                  <div id="attachedPdfIcon" class="attached-pdf-icon" style="display: none;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="9" y1="13" x2="15" y2="13"></line>
+                      <line x1="9" y1="17" x2="15" y2="17"></line>
+                    </svg>
+                  </div>
+                  <button type="button" class="media-zoom-overlay" id="previewZoomBtn" title="Inspect full size">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      <line x1="11" y1="8" x2="11" y2="14"></line>
+                      <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                  </button>
+                </div>
+                <div class="media-details">
+                  <div class="media-filename" id="attachedFilename">chart.png</div>
+                  <div class="media-meta">
+                    <span class="media-size" id="attachedSize">0 KB</span>
+                    <span class="media-type-badge" id="attachedTypeBadge">IMAGE</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-remove-media" id="removeMediaBtn" title="Remove media">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -223,6 +327,22 @@
               <div class="sources-chips" id="sourcesTags"></div>
             </div>
 
+            <!-- Grounding & Evidence Media Panel -->
+            <div class="evidence-media-panel" id="evidenceMediaPanel" style="display: none;">
+              <div class="evidence-media-head">
+                <div class="evidence-head-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                  <span>Grounding Media &amp; Visual Evidence</span>
+                </div>
+                <span class="media-count-badge" id="mediaCountBadge">0 Items</span>
+              </div>
+              <div class="evidence-media-grid" id="evidenceMediaGrid"></div>
+            </div>
+
             <!-- Formatted Report Article -->
             <article class="article-content" id="answerArticle"></article>
 
@@ -236,6 +356,44 @@
     </div>
   </main>
 
-  <script src="/static/app.js"></script>
+  <!-- Modern Accessible Lightbox Modal Overlay -->
+  <div id="mediaLightbox" class="media-lightbox-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+    <div class="lightbox-card" id="lightboxCard">
+      <div class="lightbox-toolbar">
+        <div class="lightbox-title-group">
+          <h4 class="lightbox-title" id="lightboxTitle">Research Media</h4>
+          <span class="lightbox-caption" id="lightboxCaption"></span>
+        </div>
+        <div class="lightbox-actions">
+          <button type="button" class="lightbox-btn" id="lightboxZoomBtn" title="Toggle zoom">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </button>
+          <a id="lightboxDownloadBtn" class="lightbox-btn" title="Open original in new tab" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          <button type="button" class="lightbox-btn close" id="lightboxCloseBtn" title="Close (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="lightbox-img-wrapper" id="lightboxImgWrapper">
+        <img id="lightboxImg" src="" alt="Full size preview" class="lightbox-main-img">
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=3.4"></script>
 </body>
 </html>

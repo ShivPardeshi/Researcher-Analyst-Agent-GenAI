@@ -9,6 +9,7 @@ from app.data.research_knowledge_base import SAMPLE_RESEARCH_DOCUMENTS
 
 # Thread-local / query-level source tracking container
 _last_consulted_sources: Set[str] = set()
+_last_consulted_media: List[Dict[str, Any]] = []
 
 
 def get_last_consulted_sources() -> List[str]:
@@ -16,9 +17,15 @@ def get_last_consulted_sources() -> List[str]:
     return sorted(list(_last_consulted_sources))
 
 
+def get_last_consulted_media() -> List[Dict[str, Any]]:
+    """Retrieve the media diagrams and charts associated with consulted documents."""
+    return list(_last_consulted_media)
+
+
 def clear_consulted_sources() -> None:
-    """Reset the consulted sources tracker before starting a new inquiry."""
+    """Reset the consulted sources and media trackers before starting a new inquiry."""
     _last_consulted_sources.clear()
+    _last_consulted_media.clear()
 
 
 def search_research_knowledge_base(query: str) -> str:
@@ -69,6 +76,11 @@ def search_research_knowledge_base(query: str) -> str:
     results: List[str] = []
     for _, doc in matched_docs[:3]:  # Top 3 most relevant documents
         _last_consulted_sources.add(doc["title"])
+        if doc.get("media"):
+            media_item = doc["media"]
+            if not any(m.get("url") == media_item.get("url") for m in _last_consulted_media):
+                _last_consulted_media.append(media_item)
+
         content_preview = doc["content"][:400] + ("..." if len(doc["content"]) > 400 else "")
         results.append(
             f"[{doc['title']}]\nCategory: {doc.get('category', 'General')}\n"
@@ -98,3 +110,29 @@ def get_all_research_documents() -> List[Dict[str, Any]]:
         }
         for d in SAMPLE_RESEARCH_DOCUMENTS
     ]
+
+
+def scrape_web_page(url: str) -> str:
+    """Scrape and extract readable research content from a live web page URL.
+
+    Args:
+        url: The web URL to fetch and analyze.
+
+    Returns:
+        Cleaned text extract and metadata from the webpage.
+    """
+    from app.agents.rag import scrape_web_content
+
+    result = scrape_web_content(url)
+    title = result.get("title", url)
+    _last_consulted_sources.add(f"Web Source: {title} ({url})")
+
+    if result.get("status") == "error":
+        return f"[Web Scraping Error for {url}]: {result.get('summary')}"
+
+    return (
+        f"[LIVE SCRAPED WEB SOURCE: {title}]\n"
+        f"URL: {url}\n"
+        f"Content Extract:\n{result.get('summary')}\n"
+        f"[END OF WEB SOURCE]"
+    )

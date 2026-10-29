@@ -29,6 +29,12 @@ SAMPLE_RESEARCH_DOCUMENTS: List[Dict[str, Any]] = [
         ),
         "author": "Global AI Systems Institute",
         "date": "2025-11-15",
+        "media": {
+            "type": "chart",
+            "url": "/static/media/multi_agent_benchmarks.svg",
+            "title": "Multi-Agent Reasoning Benchmarks vs. Monolithic LLMs",
+            "caption": "Empirical comparison of factual consistency (94.6% vs 58.2%) and hallucination reduction (-42%) in coordinate agent teams.",
+        },
     },
     {
         "id": "RES-ENERGY-002",
@@ -53,6 +59,12 @@ SAMPLE_RESEARCH_DOCUMENTS: List[Dict[str, Any]] = [
         ),
         "author": "International Clean Tech Council",
         "date": "2025-08-20",
+        "media": {
+            "type": "chart",
+            "url": "/static/media/bess_cost_curve.svg",
+            "title": "Grid-Scale Battery Storage (BESS) LCOE Parity Dynamics",
+            "caption": "Trajectory of paired solar-plus-storage cost curve reaching parity with gas peaking plants ($65-$80/MWh).",
+        },
     },
     {
         "id": "RES-QUANTUM-003",
@@ -77,6 +89,12 @@ SAMPLE_RESEARCH_DOCUMENTS: List[Dict[str, Any]] = [
         ),
         "author": "Advanced Cryptographic & Quantum Research Group",
         "date": "2025-09-30",
+        "media": {
+            "type": "diagram",
+            "url": "/static/media/quantum_qubit_scaling.svg",
+            "title": "Quantum Fault-Tolerance & NIST Post-Quantum Timeline",
+            "caption": "Physical to logical qubit scaling projections and NIST FIPS 203/204/205 post-quantum migration deadlines.",
+        },
     },
     {
         "id": "RES-SEMI-004",
@@ -100,6 +118,12 @@ SAMPLE_RESEARCH_DOCUMENTS: List[Dict[str, Any]] = [
         ),
         "author": "Global Semiconductor Industry Consortium",
         "date": "2025-10-12",
+        "media": {
+            "type": "diagram",
+            "url": "/static/media/gaa_nanosheet_2nm.svg",
+            "title": "2nm Gate-All-Around (GAA) & CoWoS Packaging Architecture",
+            "caption": "Structural comparison of 3-sided FinFET vs 4-sided 360-degree GAA Nanosheet channels and CoWoS packaging interposer.",
+        },
     },
     {
         "id": "RES-HEALTH-005",

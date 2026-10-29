@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="energyBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#062e24"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="curveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="480" rx="16" fill="url(#energyBg)"/>
+
+  <!-- Grid lines -->
+  <path d="M 70 120 L 730 120 M 70 180 L 730 180 M 70 240 L 730 240 M 70 300 L 730 300 M 70 360 L 730 360" stroke="#134e4a" stroke-width="1" stroke-dasharray="4,4" opacity="0.6"/>
+
+  <!-- Title -->
+  <text x="70" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" fill="#f0fdf4">Grid-Scale Battery Storage (BESS) &amp; LCOE Parity Dynamics</text>
+  <text x="70" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#6ee7b7">Solar-plus-Storage Levelized Cost vs Peaker Gas Parity • Source: Clean Tech Council 2025</text>
+
+  <!-- Parity Zone Banner -->
+  <rect x="70" y="190" width="660" height="50" fill="#f59e0b" opacity="0.12" rx="6"/>
+  <text x="500" y="220" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#fbbf24">GAS PEAKER LCOE PARITY ZONE ($65–$80 / MWh)</text>
+
+  <!-- LCOE Curve (Decreasing) -->
+  <path d="M 100 130 C 220 180, 360 215, 700 230 L 700 360 L 100 360 Z" fill="url(#curveGrad)"/>
+  <path d="M 100 130 C 220 180, 360 215, 700 230" fill="none" stroke="#34d399" stroke-width="3.5"/>
+
+  <!-- Data Points -->
+  <circle cx="100" cy="130" r="6" fill="#34d399"/>
+  <text x="90" y="115" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#f0fdf4">$142/MWh (2020)</text>
+
+  <circle cx="360" cy="210" r="6" fill="#fbbf24"/>
+  <text x="340" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#fbbf24">$72/MWh (Parity Reached)</text>
+
+  <circle cx="700" cy="230" r="6" fill="#10b981"/>
+  <text x="630" y="260" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#34d399">$54/MWh (2028E)</text>
+
+  <!-- Cards -->
+  <rect x="70" y="380" width="200" height="75" rx="8" fill="#0f2922" stroke="#134e4a" stroke-width="1"/>
+  <text x="85" y="410" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#34d399">33.4%</text>
+  <text x="85" y="435" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#a7f3d0">BESS Capacity CAGR through 2030</text>
+
+  <rect x="290" y="380" width="210" height="75" rx="8" fill="#0f2922" stroke="#134e4a" stroke-width="1"/>
+  <text x="305" y="410" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#38bdf8">82% LFP</text>
+  <text x="305" y="435" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#a7f3d0">Dominance in Stationary Deployments</text>
+
+  <rect x="520" y="380" width="210" height="75" rx="8" fill="#0f2922" stroke="#134e4a" stroke-width="1"/>
+  <text x="535" y="410" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#facc15">750+ GW</text>
+  <text x="535" y="435" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#a7f3d0">Annual Clean Additions by 2027</text>
+</svg>

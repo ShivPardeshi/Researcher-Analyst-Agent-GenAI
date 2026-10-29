@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="qBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1b33"/>
+      <stop offset="100%" stop-color="#060d1b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="480" rx="16" fill="url(#qBg)"/>
+
+  <!-- Title -->
+  <text x="60" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" fill="#f8fafc">Quantum Fault-Tolerance &amp; NIST Post-Quantum Timeline</text>
+  <text x="60" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#93c5fd">Physical vs. Logical Qubit Projections &amp; Cryptographic Threat Horizon • NIST FIPS 203/204/205</text>
+
+  <!-- Timeline bar -->
+  <line x1="80" y1="210" x2="720" y2="210" stroke="#1e3a8a" stroke-width="4"/>
+
+  <!-- Milestones -->
+  <!-- 2024-2025: Physical Qubits >1000 -->
+  <circle cx="120" cy="210" r="10" fill="#38bdf8"/>
+  <rect x="80" y="115" width="160" height="70" rx="8" fill="#172554" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="95" y="140" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#93c5fd">2024 – 2025</text>
+  <text x="95" y="160" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#cbd5e1">1,000+ Physical Qubits</text>
+  <text x="95" y="174" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#64748b">Noisy / No fault tolerance</text>
+
+  <!-- 2026-2028: Surface-code logical demonstrations -->
+  <circle cx="320" cy="210" r="10" fill="#60a5fa"/>
+  <rect x="240" y="240" width="170" height="70" rx="8" fill="#172554" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="255" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#93c5fd">2026 – 2028</text>
+  <text x="255" y="285" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#cbd5e1">&lt;100 Logical Qubits</text>
+  <text x="255" y="299" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#64748b">Error rates ~10^-6 achieved</text>
+
+  <!-- 2030: NIST Migration Deadline -->
+  <circle cx="500" cy="210" r="12" fill="#fbbf24"/>
+  <rect x="420" y="115" width="165" height="70" rx="8" fill="#292212" stroke="#d97706" stroke-width="1.5"/>
+  <text x="435" y="140" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#fde68a">2030 Mandate</text>
+  <text x="435" y="160" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#fef3c7">NIST PQC Migration</text>
+  <text x="435" y="174" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#fbbf24">FIPS 203, 204, 205 required</text>
+
+  <!-- 2032-2035+: Shor Threat Horizon -->
+  <circle cx="680" cy="210" r="10" fill="#f43f5e"/>
+  <rect x="590" y="240" width="180" height="70" rx="8" fill="#2d131a" stroke="#be123c" stroke-width="1"/>
+  <text x="605" y="265" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#fecdd3">2032 – 2035+</text>
+  <text x="605" y="285" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#ffe4e6">RSA-2048 Threat Horizon</text>
+  <text x="605" y="299" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" fill="#fb7185">~4,000 noise-free logical qubits</text>
+
+  <!-- Bottom cards -->
+  <g transform="translate(60, 365)">
+    <rect x="0" y="0" width="220" height="75" rx="8" fill="#172554" stroke="#1e3a8a" stroke-width="1"/>
+    <text x="16" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="800" fill="#38bdf8">ML-KEM (203)</text>
+    <text x="16" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#93c5fd">Key Encapsulation Standard</text>
+
+    <rect x="240" y="0" width="220" height="75" rx="8" fill="#172554" stroke="#1e3a8a" stroke-width="1"/>
+    <text x="256" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="800" fill="#60a5fa">ML-DSA (204)</text>
+    <text x="256" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#93c5fd">Digital Signature Standard</text>
+
+    <rect x="480" y="0" width="200" height="75" rx="8" fill="#172554" stroke="#1e3a8a" stroke-width="1"/>
+    <text x="496" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="800" fill="#a78bfa">SLH-DSA (205)</text>
+    <text x="496" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#93c5fd">Stateless Hash Signatures</text>
+  </g>
+</svg>

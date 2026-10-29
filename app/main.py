@@ -9,9 +9,11 @@ Provides:
 """
 
 import asyncio
+import base64
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
+import httpx
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -103,17 +105,133 @@ async def execute_research(request: ResearchRequest) -> ResearchResponse:
         )
 
     topic_query = request.topic or request.question or ""
-    logger.info("Executing research inquiry (length=%d characters)...", len(topic_query))
+    image_bytes = None
+    image_filename = request.image_filename
+    image_mime = request.image_mime_type or "image/jpeg"
+
+    # Decode base64 image if attached
+    if request.image_base64:
+        try:
+            b64_str = request.image_base64
+            if "," in b64_str:
+                header, b64_str = b64_str.split(",", 1)
+                if "data:" in header and ";base64" in header:
+                    extracted_mime = header.split("data:")[1].split(";base64")[0]
+                    if extracted_mime:
+                        image_mime = extracted_mime
+            image_bytes = base64.b64decode(b64_str)
+            if not image_filename:
+                ext = image_mime.split("/")[-1] if "/" in image_mime else "jpg"
+                image_filename = f"research_artifact.{ext}"
+        except Exception as e:
+            logger.warning("Failed to decode base64 image: %s", e)
+
+    # Fetch image from URL if provided and no base64 was supplied
+    elif request.image_url:
+        try:
+            clean_img_url = request.image_url.strip()
+            if clean_img_url.startswith("/static/"):
+                static_path = Path(__file__).parent / clean_img_url.lstrip("/")
+                if static_path.exists():
+                    image_bytes = static_path.read_bytes()
+                    if static_path.suffix.lower() == ".svg":
+                        image_mime = "image/svg+xml"
+                    elif static_path.suffix.lower() == ".png":
+                        image_mime = "image/png"
+                    elif static_path.suffix.lower() in [".jpg", ".jpeg"]:
+                        image_mime = "image/jpeg"
+                    elif static_path.suffix.lower() == ".webp":
+                        image_mime = "image/webp"
+                    if not image_filename:
+                        image_filename = static_path.name
+                else:
+                    logger.warning("Local static image path not found: %s", static_path)
+            else:
+                async with httpx.AsyncClient(timeout=10.0) as http_client:
+                    resp = await http_client.get(clean_img_url)
+                    if resp.status_code == 200:
+                        image_bytes = resp.content
+                        image_mime = resp.headers.get("content-type", "image/jpeg")
+                        if not image_filename:
+                            image_filename = clean_img_url.split("/")[-1].split("?")[0] or "web_chart.jpg"
+        except Exception as e:
+            logger.warning("Failed to download image from URL '%s': %s", request.image_url, e)
+
+    # Decode PDF attachment if provided
+    pdf_bytes = None
+    pdf_filename = request.pdf_filename
+    if request.pdf_base64:
+        try:
+            pdf_str = request.pdf_base64
+            if "," in pdf_str:
+                _, pdf_str = pdf_str.split(",", 1)
+            pdf_bytes = base64.b64decode(pdf_str)
+            if not pdf_filename:
+                pdf_filename = "attached_research_whitepaper.pdf"
+        except Exception as e:
+            logger.warning("Failed to decode base64 PDF attachment: %s", e)
+
+    logger.info(
+        "Executing research inquiry (topic_len=%d, has_image=%s, has_pdf=%s, web_urls=%s)...",
+        len(topic_query),
+        bool(image_bytes),
+        bool(pdf_bytes),
+        len(request.web_urls) if request.web_urls else 0,
+    )
 
     try:
         workflow_task = asyncio.to_thread(
             run_research_workflow,
             topic=topic_query,
+            image_bytes=image_bytes,
+            image_filename=image_filename,
+            image_mime_type=image_mime,
+            pdf_bytes=pdf_bytes,
+            pdf_filename=pdf_filename,
+            web_urls=request.web_urls,
             focus_areas=request.focus_areas,
         )
         result = await asyncio.wait_for(workflow_task, timeout=config.REQUEST_TIMEOUT)
 
         report_content = result.get("report") or result.get("answer", "No report generated.")
+
+        # Assemble media items (user attachment + PDF document + any grounding diagrams)
+        media_items = []
+        if image_bytes:
+            preview_src = (
+                request.image_base64
+                if request.image_base64
+                else f"data:{image_mime};base64,{base64.b64encode(image_bytes).decode('utf-8')}"
+            )
+            media_items.append({
+                "type": "image",
+                "role": "user_attachment",
+                "title": image_filename or "Attached Research Artifact",
+                "caption": "User-submitted research chart or empirical evidence artifact inspected by multimodal agent.",
+                "url": preview_src,
+                "mime_type": image_mime,
+            })
+
+        if pdf_bytes:
+            media_items.append({
+                "type": "pdf",
+                "role": "user_attachment",
+                "title": pdf_filename or "Attached Research PDF Document",
+                "caption": f"User-submitted PDF document ingested via RAG parser ({len(pdf_bytes) // 1024} KB).",
+                "url": "/static/media/multi_agent_benchmarks.svg",  # fallback preview
+                "mime_type": "application/pdf",
+            })
+
+        grounding_media = result.get("media", [])
+        if grounding_media:
+            for gm in grounding_media:
+                media_items.append({
+                    "type": gm.get("type", "chart"),
+                    "role": "grounding_diagram",
+                    "title": gm.get("title", "Grounding Benchmark Diagram"),
+                    "caption": gm.get("caption", "Verified empirical benchmark diagram from research library."),
+                    "url": gm.get("url", ""),
+                })
 
         return ResearchResponse(
             status="success",
@@ -123,6 +241,7 @@ async def execute_research(request: ResearchRequest) -> ResearchResponse:
             sources=result.get("sources", []),
             agents=AGENT_NAMES,
             disclaimer=config.RESEARCH_DISCLAIMER,
+            media=media_items,
         )
 
     except asyncio.TimeoutError:

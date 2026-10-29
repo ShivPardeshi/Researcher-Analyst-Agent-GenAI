@@ -13,7 +13,9 @@ from agno.team import Team, TeamMode
 from app import config
 from app.agents.tools import (
     clear_consulted_sources,
+    get_last_consulted_media,
     get_last_consulted_sources,
+    scrape_web_page,
     search_research_knowledge_base,
 )
 
@@ -51,18 +53,19 @@ def build_research_team(api_key: Optional[str] = None, model_id: Optional[str] =
         name="Research Agent",
         role="Searches and gathers information across scientific, market, and technical sources.",
         model=model,
-        tools=[search_research_knowledge_base],
+        tools=[search_research_knowledge_base, scrape_web_page],
         telemetry=False,
         description=(
             "An expert research scout specialized in gathering empirical data, scientific literature, "
-            "market intelligence, and technical benchmarks. Uses search_research_knowledge_base to retrieve "
-            "authoritative facts, statistics, and verifiable citations."
+            "market intelligence, and technical benchmarks. Uses search_research_knowledge_base and scrape_web_page "
+            "to retrieve authoritative facts, live web evidence, statistics, and verifiable citations."
         ),
         instructions=[
             "1. Analyze the inquiry and break it down into core research questions.",
             "2. Invoke search_research_knowledge_base with targeted keywords to discover relevant literature and data.",
-            "3. Extract key statistics, verified data points, market metrics, and historical benchmarks.",
-            "4. Clearly catalog raw findings and cite consulted source titles.",
+            "3. Invoke scrape_web_page if external live web URLs or online documentation need verification.",
+            "4. Extract key statistics, verified data points, market metrics, and historical benchmarks.",
+            "5. Clearly catalog raw findings and cite consulted source titles.",
         ],
     )
 
@@ -113,13 +116,13 @@ def build_research_team(api_key: Optional[str] = None, model_id: Optional[str] =
         name="Research Analyst Team",
         members=[research_agent, analysis_agent, report_agent],
         model=model,
-        tools=[search_research_knowledge_base],
+        tools=[search_research_knowledge_base, scrape_web_page],
         add_member_tools_to_context=True,
         mode=TeamMode.coordinate,
         telemetry=False,
         instructions=[
             "Coordinate the three agents sequentially to deliver an authoritative research report:",
-            "1. Have Research Agent search the knowledge base and gather empirical evidence.",
+            "1. Have Research Agent search the knowledge base or scrape web URLs to gather empirical evidence.",
             "2. Have Analysis & Verification Agent validate claims, test assumptions, and derive strategic insights.",
             "3. Have Report Generation Agent synthesize the final structured executive report.",
         ],
@@ -134,6 +137,9 @@ def run_research_workflow(
     image_bytes: Optional[bytes] = None,
     image_filename: Optional[str] = None,
     image_mime_type: Optional[str] = None,
+    pdf_bytes: Optional[bytes] = None,
+    pdf_filename: Optional[str] = None,
+    web_urls: Optional[List[str]] = None,
     focus_areas: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Execute the multi-agent research workflow across Research, Analysis & Verification, and Report Generation."""
@@ -150,36 +156,105 @@ def run_research_workflow(
     seen = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
-    # 1. Document / Chart Vision Extraction if image attached
-    if image_bytes and config.MODEL_PROVIDER == "google" and config.GEMINI_API_KEY:
-        from google import genai
-        from google.genai import types
+    # 1. RAG on Uploaded PDF Documents
+    if pdf_bytes:
+        try:
+            from app.agents.rag import (
+                chunk_document_pages,
+                extract_text_from_pdf,
+                score_and_retrieve_chunks,
+            )
 
-        client = genai.Client(api_key=config.GEMINI_API_KEY)
-        mime = image_mime_type or "image/jpeg"
-
-        for model_id in models_to_try:
-            try:
-                ocr_response = client.models.generate_content(
-                    model=model_id,
-                    contents=[
-                        types.Part.from_bytes(data=image_bytes, mime_type=mime),
-                        (
-                            "You are a Research Analyst document & chart specialist. Inspect this uploaded image/chart. "
-                            "Extract all legible data points, metrics, trends, percentages, labels, and analytical claims."
-                        ),
-                    ],
-                    config={"http_options": {"timeout": 15000}},
+            pdf_pages = extract_text_from_pdf(pdf_bytes)
+            if pdf_pages:
+                chunks = chunk_document_pages(pdf_pages, chunk_size=400, overlap=80)
+                top_chunks = score_and_retrieve_chunks(chunks, topic, top_k=5)
+                passages = "\n\n".join(
+                    f"[Page {c['page']} Passage]:\n{c['text']}" for c in top_chunks
                 )
-                if ocr_response and ocr_response.text:
-                    evidence_context = (
-                        f"\n\n[ATTACHED RESEARCH DATA EVIDENCE: {image_filename or 'Uploaded Artifact'}]\n"
-                        f"{ocr_response.text.strip()}\n"
-                        f"[END OF ATTACHED EVIDENCE]\n"
+                evidence_context += (
+                    f"\n\n[ATTACHED PDF WHITE PAPER EVIDENCE: {pdf_filename or 'Document.pdf'}]\n"
+                    f"Total Pages Analyzed: {len(pdf_pages)} | Top Relevant Passages:\n"
+                    f"{passages}\n"
+                    f"[END OF ATTACHED PDF EVIDENCE]\n"
+                )
+                from app.agents.tools import _last_consulted_sources
+
+                _last_consulted_sources.add(
+                    f"Attached PDF: {pdf_filename or 'Research Document'} ({len(pdf_pages)} pages)"
+                )
+        except Exception as e:
+            logger.warning("Error processing PDF RAG: %s", e)
+
+    # 2. Live Web Scraping RAG for Provided URLs
+    if web_urls:
+        try:
+            from app.agents.rag import scrape_web_content
+            from app.agents.tools import _last_consulted_sources
+
+            for url in web_urls[:3]:
+                res = scrape_web_content(url)
+                if res.get("status") == "success":
+                    title = res.get("title", url)
+                    _last_consulted_sources.add(f"Live Web Source: {title} ({url})")
+                    evidence_context += (
+                        f"\n\n[LIVE SCRAPED WEB SOURCE: {title}]\n"
+                        f"URL: {url}\n"
+                        f"{res.get('summary', '')[:2500]}\n"
+                        f"[END OF LIVE WEB SOURCE]\n"
                     )
-                    break
+        except Exception as e:
+            logger.warning("Error during live web scraping: %s", e)
+
+    # 1. Document / Chart Vision & Data Extraction if image attached
+    if image_bytes:
+        mime = image_mime_type or "image/jpeg"
+        # Vector SVG: extract text and quantitative values directly
+        if "svg" in mime.lower() or (image_filename and image_filename.lower().endswith(".svg")):
+            try:
+                import re
+
+                svg_str = image_bytes.decode("utf-8", errors="ignore")
+                text_matches = re.findall(r"<text[^>]*>(.*?)</text>", svg_str, re.DOTALL)
+                clean_texts = [re.sub(r"<[^>]+>", "", t).strip() for t in text_matches if t.strip()]
+                if clean_texts:
+                    evidence_context = (
+                        f"\n\n[ATTACHED RESEARCH DATA EVIDENCE (VECTOR CHART): {image_filename or 'SVG Chart'}]\n"
+                        f"Chart Labels, Values & Empirical Data:\n"
+                        + "\n".join(f"- {t}" for t in clean_texts[:35])
+                        + "\n[END OF ATTACHED EVIDENCE]\n"
+                    )
             except Exception:
-                continue
+                pass
+
+        # Raster images (PNG, JPEG, WEBP) via Gemini Vision
+        elif config.MODEL_PROVIDER == "google" and config.GEMINI_API_KEY:
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=config.GEMINI_API_KEY)
+            for model_id in models_to_try:
+                try:
+                    ocr_response = client.models.generate_content(
+                        model=model_id,
+                        contents=[
+                            types.Part.from_bytes(data=image_bytes, mime_type=mime),
+                            (
+                                "You are a Research Analyst document & chart specialist. Inspect this uploaded image/chart. "
+                                "Extract all legible data points, metrics, trends, percentages, labels, and analytical claims."
+                            ),
+                        ],
+                        config={"http_options": {"timeout": 15000}},
+                    )
+                    if ocr_response and ocr_response.text:
+                        evidence_context = (
+                            f"\n\n[ATTACHED RESEARCH DATA EVIDENCE: {image_filename or 'Uploaded Artifact'}]\n"
+                            f"{ocr_response.text.strip()}\n"
+                            f"[END OF ATTACHED EVIDENCE]\n"
+                        )
+                        break
+                except Exception:
+                    continue
 
     # 2. Search Grounding Research Knowledge Base
     search_query = f"{topic} {evidence_context[:300]}"
@@ -187,6 +262,21 @@ def run_research_workflow(
         search_query += " " + " ".join(focus_areas)
     grounding_docs = search_research_knowledge_base(search_query)
     sources = get_last_consulted_sources()
+    consulted_media = get_last_consulted_media()
+
+    media_context = ""
+    if consulted_media:
+        chart_bullets = "\n".join(
+            f"- ![{m['title']}]({m['url']}) : {m.get('caption', m['title'])}"
+            for m in consulted_media
+        )
+        media_context = (
+            f"\n\nGROUNDING BENCHMARK CHARTS & DIAGRAMS:\n{chart_bullets}\n"
+            "NOTE: You may embed the above markdown image(s) into the Key Findings or In-Depth Analytical Evaluation sections "
+            "where they best support the empirical evidence: ![Chart Title](url)\n"
+        )
+    if image_bytes and image_filename:
+        media_context += f"\nATTACHED USER EVIDENCE ARTIFACT: `{image_filename}`. In the Methodology & Evidence Base section, explicitly analyze the data points observed in this attached image."
 
     # 3. Multi-Agent Synthesis Prompt
     focus_text = f"\nFocus Areas: {', '.join(focus_areas)}" if focus_areas else ""
@@ -199,7 +289,8 @@ def run_research_workflow(
         f"\"\"\"{topic}\"\"\"{focus_text}\n"
         f"{evidence_context}\n"
         f"GROUNDING RESEARCH KNOWLEDGE BASE:\n"
-        f"{grounding_docs}\n\n"
+        f"{grounding_docs}\n"
+        f"{media_context}\n\n"
         f"Execute the full workflow and generate the Comprehensive Research Report formatted with:\n"
         f"- **Executive Summary**: High-level synthesis, bottom-line strategic takeaway, and core findings.\n"
         f"- **Methodology & Evidence Base**: Information gathered by the Research Agent.\n"
@@ -294,6 +385,7 @@ def run_research_workflow(
         "sources": sources,
         "topic": topic,
         "agents": AGENT_NAMES,
+        "media": consulted_media,
     }
 
 

@@ -5,9 +5,9 @@
 [![Agno](https://img.shields.io/badge/Agno-Agents-orange.svg)](https://agno.com/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg)](https://www.docker.com/)
 [![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D33833.svg)](https://www.jenkins.io/)
-[![Tests](https://img.shields.io/badge/Tests-Passing%20(13%2F13)-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-Passing%20(23%2F23)-brightgreen.svg)](tests/)
 
-**Research Analyst Agents** is an autonomous multi-agent research investigation, verification, and synthesis system. It coordinates three specialized AI agents using the **Agno** multi-agent framework to turn any research inquiry or dataset into an executive-grade, verified research memorandum.
+**Research Analyst Agents** is an autonomous multi-agent research investigation, verification, and synthesis system with multimodal grounding and Retrieval-Augmented Generation (RAG). It coordinates three specialized AI agents using the **Agno** multi-agent framework to turn any research inquiry, uploaded PDF whitepaper, web URL, or empirical data chart into an executive-grade, verified research memorandum.
 
 ---
 
@@ -52,14 +52,16 @@ Research Analyst/
 │   ├── agents/
 │   │   ├── __init__.py               # Agent package exports
 │   │   ├── research_team.py          # The 3 Agno Agents & team orchestration
-│   │   ├── tools.py                  # Knowledge base search & source tracker
+│   │   ├── rag.py                    # PDF chunking, BM25 scoring & web scraper
+│   │   ├── tools.py                  # Knowledge base search, web scrape tool
 │   │   └── legal_team.py             # Backward-compatibility bridge
 │   ├── data/
 │   │   ├── __init__.py
 │   │   └── research_knowledge_base.py # Benchmarks, papers, and datasets
 │   ├── static/
-│   │   ├── app.js                    # Dynamic pipeline UI logic
-│   │   ├── index.html                # Single-page modern dashboard
+│   │   ├── media/                    # Empirical vector charts & benchmark SVGs
+│   │   ├── app.js                    # Dynamic pipeline UI & centered lightbox
+│   │   ├── index.html                # Modern accessible dashboard
 │   │   └── style.css                 # Dark executive glassmorphic stylesheet
 │   ├── config.py                     # Provider configuration (Gemini / Groq)
 │   ├── main.py                       # FastAPI application & REST endpoints
@@ -67,6 +69,8 @@ Research Analyst/
 ├── tests/
 │   ├── test_agents.py                # Tests 3 agents & tool retrieval
 │   ├── test_health.py                # Tests /health and frontend endpoints
+│   ├── test_media.py                 # Tests media handling & SVG endpoints
+│   ├── test_rag.py                   # Tests PDF extraction, chunking & scraping
 │   └── test_validation.py            # Tests payload validation & mocked workflow
 ├── .dockerignore                     # Docker build optimization rules
 ├── .env.example                      # Template for environment configuration
@@ -74,7 +78,7 @@ Research Analyst/
 ├── docker-compose.yml                # Multi-service container orchestration
 ├── Dockerfile                        # Multi-stage production container image
 ├── Jenkinsfile                       # Complete declarative CI/CD pipeline
-├── requirements.txt                  # Python dependencies
+├── requirements.txt                  # Python dependencies (pypdf, bs4, agno)
 ├── streamlit_app.py                  # Streamlit alternative interactive frontend
 └── README.md                         # System documentation
 ```
@@ -122,7 +126,7 @@ Access at **[http://localhost:8501](http://localhost:8501)**.
 ```bash
 pytest -v
 ```
-All 13 unit and integration tests will execute and validate the 3 agents, endpoints, and input validation.
+All 23 unit and integration tests will execute and validate the 3 agents, endpoints, media rendering, and RAG ingestion.
 
 ---
 

@@ -239,15 +239,24 @@ with st.form("research_form"):
         max_chars=2500,
     )
 
-    # Document Image Upload
-    uploaded_image = st.file_uploader(
-        "📊 Upload Supporting Chart / Document / Benchmark Photo (Optional):",
-        type=["png", "jpg", "jpeg", "webp"],
-        help="Attach a screenshot of a benchmark graph, architecture diagram, data table, or technical whitepaper excerpt.",
-    )
+    # Document / Media Upload (PDF Whitepapers, Charts, Diagrams)
+    upload_col1, upload_col2 = st.columns([1, 1])
+    with upload_col1:
+        uploaded_file = st.file_uploader(
+            "📄 Attach Grounding PDF Whitepaper or Image Chart (Optional):",
+            type=["pdf", "png", "jpg", "jpeg", "webp", "svg"],
+            help="Attach a research paper (PDF with RAG chunking), benchmark diagram, SVG chart, or screenshot.",
+        )
+    with upload_col2:
+        web_url_input = st.text_input(
+            "🌐 Or Enter Live Web URL / Whitepaper to Scrape (Optional):",
+            placeholder="https://arxiv.org/html/... or documentation URL",
+            help="Extracts clean text, removes boilerplate, and grounds analysis with live citations.",
+        )
 
-    if uploaded_image:
-        st.caption(f"📎 Attached artifact: `{uploaded_image.name}` ({uploaded_image.size // 1024} KB)")
+    if uploaded_file:
+        file_ext = uploaded_file.name.split(".")[-1].upper()
+        st.caption(f"📎 Attached artifact: `{uploaded_file.name}` ({uploaded_file.size // 1024} KB) [{file_ext}]")
 
     btn_col1, btn_col2, _ = st.columns([1.5, 1, 4])
     with btn_col1:
@@ -263,26 +272,48 @@ if cleared:
 
 if submitted:
     cleaned_topic = user_topic.strip()
-    if not cleaned_topic and not uploaded_image:
-        st.error("Please enter a research topic or upload a data chart to analyze.")
-    elif cleaned_topic and len(cleaned_topic) < 4 and not uploaded_image:
+    clean_url = web_url_input.strip() if web_url_input else None
+    has_file = uploaded_file is not None
+    has_url = bool(clean_url)
+
+    if not cleaned_topic and not has_file and not has_url:
+        st.error("Please enter a research topic, upload a document/image, or enter a web URL.")
+    elif cleaned_topic and len(cleaned_topic) < 4 and not has_file and not has_url:
         st.error("Please enter a research topic with at least 4 characters.")
     elif not config.is_provider_configured():
         st.error(f"API Key for {config.MODEL_PROVIDER.upper()} is not configured. Please add your key to `.env`.")
     else:
-        if not cleaned_topic and uploaded_image:
-            cleaned_topic = f"Analyze the data, benchmarks, and claims in the attached image ({uploaded_image.name}) and generate a verified research report."
+        if not cleaned_topic:
+            if has_file:
+                cleaned_topic = f"Analyze the data, benchmarks, and claims in the attached file ({uploaded_file.name}) and generate a verified research report."
+            elif has_url:
+                cleaned_topic = f"Scrape and synthesize the research literature, empirical benchmarks, and analysis from: {clean_url}"
 
         st.session_state.topic_text = cleaned_topic
-        st.session_state.attached_doc_name = uploaded_image.name if uploaded_image else None
+        st.session_state.attached_doc_name = uploaded_file.name if has_file else (clean_url if has_url else None)
 
-        img_bytes = uploaded_image.getvalue() if uploaded_image else None
-        img_name = uploaded_image.name if uploaded_image else None
-        img_mime = uploaded_image.type if uploaded_image else None
+        # Distinguish between PDF and Image
+        img_bytes = None
+        img_name = None
+        img_mime = None
+        pdf_bytes = None
+        pdf_name = None
+
+        if has_file:
+            fname = uploaded_file.name
+            if fname.lower().endswith(".pdf") or uploaded_file.type == "application/pdf":
+                pdf_bytes = uploaded_file.getvalue()
+                pdf_name = fname
+            else:
+                img_bytes = uploaded_file.getvalue()
+                img_name = fname
+                img_mime = uploaded_file.type or ("image/svg+xml" if fname.lower().endswith(".svg") else "image/png")
+
+        web_urls = [clean_url] if has_url else None
 
         progress_placeholder = st.empty()
         with progress_placeholder.container():
-            st.info("Coordinating 3 Agents: [1] Research Agent ➔ [2] Analysis & Verification Agent ➔ [3] Report Generation Agent...")
+            st.info("Coordinating 3 Agents: [1] Research Agent (with RAG/Web Scraping) ➔ [2] Analysis & Verification Agent ➔ [3] Report Generation Agent...")
 
         try:
             with st.spinner("Executing multi-agent investigation, verification, and report synthesis..."):
@@ -291,6 +322,9 @@ if submitted:
                     image_bytes=img_bytes,
                     image_filename=img_name,
                     image_mime_type=img_mime,
+                    pdf_bytes=pdf_bytes,
+                    pdf_filename=pdf_name,
+                    web_urls=web_urls,
                 )
                 st.session_state.response_data = result
         except Exception as e:
@@ -334,6 +368,28 @@ if st.session_state.response_data:
         with st.expander(f"📚 Consulted Knowledge Base Sources & Benchmarks ({len(sources)})", expanded=True):
             for s in sources:
                 st.markdown(f"- **{s}**")
+
+    # Grounding Media / Visual Evidence Panel
+    media_items = resp.get("media", [])
+    if media_items:
+        with st.expander(f"📊 Grounding Visual Evidence & Artifacts ({len(media_items)})", expanded=True):
+            m_cols = st.columns(min(len(media_items), 2))
+            for idx, item in enumerate(media_items):
+                col = m_cols[idx % len(m_cols)]
+                with col:
+                    st.markdown(f"**{item.get('title', 'Artifact')}**")
+                    url = item.get("url", "")
+                    if url and any(url.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                        if url.startswith("/"):
+                            local_img = Path("app" + url)
+                            if local_img.exists():
+                                st.image(str(local_img), caption=item.get("caption", ""))
+                        else:
+                            st.image(url, caption=item.get("caption", ""))
+                    elif item.get("type") == "pdf":
+                        st.info(f"📄 **PDF Document:** {item.get('title')} — {item.get('caption', '')}")
+                    else:
+                        st.caption(item.get("caption", ""))
 
     # Report Markdown
     st.markdown("### Executive Synthesis & Analysis")
