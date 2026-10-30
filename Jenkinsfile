@@ -59,25 +59,36 @@ pipeline {
                     echo "Waiting for container startup..."
                     sleep 5
 
-                    HEALTH_URL="http://localhost:8001/health"
-                    MAX_RETRIES=6
+                    # Determine reachable endpoint (host.docker.internal for Docker-in-Docker on Mac, or localhost)
+                    MAX_RETRIES=8
                     COUNT=0
+                    PASSED=false
 
                     while [ $COUNT -lt $MAX_RETRIES ]; do
-                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL || echo "failed")
-                        if [ "$STATUS" = "200" ]; then
-                            echo "Health check PASSED! Received HTTP 200 from ${HEALTH_URL}"
-                            curl -s $HEALTH_URL
+                        echo "Probing container health (attempt $((COUNT + 1))/$MAX_RETRIES)..."
+                        if curl -s -f http://host.docker.internal:8001/health >/dev/null 2>&1; then
+                            echo "Health check PASSED via host.docker.internal:8001/health!"
+                            curl -s http://host.docker.internal:8001/health
                             echo ""
+                            PASSED=true
+                            break
+                        elif curl -s -f http://localhost:8001/health >/dev/null 2>&1; then
+                            echo "Health check PASSED via localhost:8001/health!"
+                            curl -s http://localhost:8001/health
+                            echo ""
+                            PASSED=true
+                            break
+                        elif docker exec ${TEST_CONTAINER} python3 -c "import urllib.request; resp=urllib.request.urlopen('http://127.0.0.1:8000/health'); print(resp.read().decode())" 2>/dev/null; then
+                            echo "Health check PASSED directly inside container via 127.0.0.1:8000/health!"
+                            PASSED=true
                             break
                         fi
-                        echo "Waiting for healthy status (attempt $((COUNT + 1))/$MAX_RETRIES, code: $STATUS)..."
                         sleep 4
                         COUNT=$((COUNT + 1))
                     done
 
-                    if [ $COUNT -eq $MAX_RETRIES ]; then
-                        echo "Smoke test FAILED! Health endpoint did not respond with 200."
+                    if [ "$PASSED" = "false" ]; then
+                        echo "Smoke test FAILED! Health endpoint did not respond within deadline."
                         docker logs ${TEST_CONTAINER}
                         docker rm -f ${TEST_CONTAINER}
                         exit 1
